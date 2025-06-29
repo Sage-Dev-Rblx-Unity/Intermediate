@@ -1,0 +1,94 @@
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local SeverScriptService = game:GetService("ServerScriptService")
+local RepStorage = game:GetService("ReplicatedStorage")
+
+local ProfileStore = require(SeverScriptService.Libraries.ProfileStore)
+
+local function GetStoreName()
+	
+	return RunService:IsStudio() and "Test" or "Live"
+	
+end
+
+local Template = require(SeverScriptService.Data.Template)
+local DataManager = require(SeverScriptService.Data.DataManager)
+local PlayerStore = ProfileStore.New(GetStoreName(), Template)
+
+--Synchronize Data
+local function Initialize(player: Player, Profile: typeof(PlayerStore:StartSessionAsync()))
+	
+	local Attributes = Instance.new("Folder")
+	Attributes.Name = "Attributes"
+	Attributes.Parent = player
+	
+	local Cash = Instance.new("IntValue")
+	Cash.Name = "Cash"
+	Cash.Value = Profile.Data.Cash
+	Cash.Parent = Attributes
+	
+	--Send to UI
+	RepStorage.DataUpdate:FireClient(player, Profile.Data.Cash)
+	
+end
+
+
+local function PlayerAdded(player: Player)
+	
+	local Profile = PlayerStore:StartSessionAsync("Player_" .. player.UserId, {
+		Cancel = function()
+			return player.Parent ~= Players
+		end,
+	})
+	
+	--Check if the Profile Exists
+	
+	if Profile ~= nil then
+		
+		Profile:AddUserId(player.UserId)
+		Profile:Reconcile() -- Fill In Missing Values With Template
+		
+		--PlayerLeaving & (Prevent Duplication)
+		Profile.OnSessionEnd:Connect(function()
+			DataManager.Profiles[player] = nil
+			player:Kick("Data Error Occured. PLEASE REJOIN")
+			
+		end)
+		
+		if player.Parent == Players then
+			
+			DataManager.Profiles[player] = Profile
+			Initialize(player, Profile)
+			
+		else
+			
+			Profile:EndSession()
+			
+		end
+		
+	else
+		--if server shuts down while joining
+		player:Kick("Data Error Occured. PLEASE REJOIN")
+	end
+	
+	
+end
+
+
+for _, players in Players:GetPlayers() do
+	task.spawn(PlayerAdded, players)
+end
+
+
+Players.PlayerAdded:Connect(PlayerAdded)
+	
+	
+Players.PlayerRemoving:Connect(function(player)
+	
+	local Profile = DataManager.Profiles[player]
+	if not Profile then return end
+	Profile:EndSession()
+	DataManager.Profiles[player] = nil
+	
+	
+end)
