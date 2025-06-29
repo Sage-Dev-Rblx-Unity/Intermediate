@@ -1,0 +1,151 @@
+-- Well it works but Idk if I'd be able to read this later
+local Player = game.Players.LocalPlayer
+
+local UI = Player.PlayerGui.UI
+
+
+local Dealership = UI.Dealership
+local ClassSelect = UI.ClassSelect
+local Classes = ClassSelect.Classes
+
+local TweenService = game:GetService("TweenService")
+
+local AllCars = workspace:WaitForChild("AllCars")
+local CarFeatures = Dealership.CarFeatures
+local Explore = CarFeatures:WaitForChild("Explore")
+local Camera = workspace.CurrentCamera
+
+local Back = Dealership:WaitForChild("Back")
+
+
+local function Deselected(UI,Extra)
+	local WasSelected
+	for i, v in Extra:GetChildren() do
+		if v:IsA("ImageButton") and v.ImageColor3 == Color3.fromRGB(255,255,255) then
+			WasSelected = false
+		elseif v:IsA("ImageButton") and v.ImageColor3 == Color3.fromRGB(90,90,90) then
+			-- this was selected
+			v.ImageColor3 = Color3.fromRGB(255,255,255)
+			WasSelected = true
+			break
+		end
+	end
+	return WasSelected
+
+end
+
+local function Highlight(UI,Extra)
+
+	UI.ImageColor3 = Color3.fromRGB(90,90,90)
+
+	for i, v in Extra:GetChildren() do
+		if v:IsA(UI.ClassName) and v ~= UI then
+			v.ImageColor3 = Color3.fromRGB(255,255,255)
+		end
+	end
+
+
+end
+
+
+for _, Class in Classes:GetChildren() do
+	
+	Class.MouseButton1Click:Connect(function()
+
+		ClassSelect.Enabled = false
+		
+		Dealership.Enabled = true
+		
+		local ScrollFrame = Dealership[Class.Name]
+		print(ScrollFrame.Name)
+		ScrollFrame.Visible = true
+		
+		for i, v in pairs(ScrollFrame:GetChildren()) do
+
+			if v:IsA("ImageButton") then
+
+				local GoToCar = function()
+
+					for i, v in pairs(ScrollFrame.Parent:GetChildren()) do
+
+
+						if v:IsA("Frame") then
+
+							v.Visible = true
+
+						end
+
+					end
+
+					local CurrentCar = CarFeatures:WaitForChild("CurrentCar")
+					CurrentCar.Value = v.Name
+					CarFeatures.CarName.Text = v.Name
+
+					CarFeatures.Class.Text = AllCars[v.Name]:GetAttribute("Class")
+					CarFeatures.Handling.Text = CarFeatures.Handling.Name .. ": " .. AllCars[v.Name]:GetAttribute("Handling")
+					CarFeatures.Braking.Text = CarFeatures.Braking.Name .. ": " .. AllCars[v.Name]:GetAttribute("Braking")
+					CarFeatures.Acceleration.Text = CarFeatures.Acceleration.Name .. ": " .. AllCars[v.Name]:GetAttribute("Acceleration")
+					CarFeatures.TopSpeed.Text = CarFeatures.TopSpeed.Name .. ": " .. AllCars[v.Name]:GetAttribute("TopSpeed")
+					CarFeatures.Price.Text = CarFeatures.Price.Name .. ": " .. AllCars[v.Name]:GetAttribute("Price")
+					CarFeatures.Price.Text ..= " $"
+
+
+					Highlight(v,ScrollFrame)
+					local DriveSeat = AllCars:WaitForChild(v.Name).DriveSeat
+					Camera.CameraType = Enum.CameraType.Scriptable
+
+					local Info = TweenInfo.new(.5,Enum.EasingStyle.Circular ,Enum.EasingDirection.Out,0,false)
+					local targetCFrame = DriveSeat.CFrame * CFrame.new(1, 10, -20)
+					local Task = {
+
+						CFrame = targetCFrame * CFrame.Angles(math.rad(35), math.rad(180), 0)
+
+					}			
+					TweenService:Create(Camera,Info, Task):Play()
+
+
+
+				end
+				
+				GoToCar()
+				
+				v.MouseButton1Click:Connect(GoToCar)
+				
+
+			end
+			
+			Back.MouseButton1Click:Connect(function()
+				
+				Dealership.Enabled = false
+				ClassSelect.Enabled = true
+				ScrollFrame.Visible = false
+				workspace.Camera.CameraType = Enum.CameraType.Custom
+
+
+			end)
+
+			Explore.MouseButton1Click:Connect(function()
+
+
+				for i, v in pairs(ScrollFrame:GetChildren()) do
+
+					if v:IsA("ImageButton") then
+
+						workspace.Camera.CameraType = Enum.CameraType.Custom
+
+					end
+
+				end
+
+
+			end)
+
+		end
+
+	end)
+
+	
+end
+
+
+
