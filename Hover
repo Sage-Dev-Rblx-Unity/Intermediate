@@ -1,0 +1,45 @@
+local ScreenGui = script.Parent
+
+local TweenService = game:GetService("TweenService")
+
+for index, Button in pairs(ScreenGui:GetDescendants()) do 
+	
+	if Button:IsA("GuiButton") then
+		
+		
+		local currentSize = Button.Size
+		local scaleFactor = 1.1
+		
+		-- Create new size by multiplying Scale components
+		local	NewSize = UDim2.new(
+			currentSize.X.Scale * scaleFactor,
+			currentSize.X.Offset, -- keep offset unchanged
+			currentSize.Y.Scale * scaleFactor,
+			currentSize.Y.Offset  -- keep offset unchanged
+		)
+
+
+		local TWEEN_INFO = TweenInfo.new(0.1, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut)
+
+		local tween = TweenService:Create(Button, TWEEN_INFO, {})
+
+		Button:GetPropertyChangedSignal("GuiState"):Connect(function()
+			if Button.GuiState == Enum.GuiState.Hover then
+				tween:Cancel()
+				tween = TweenService:Create(Button, TWEEN_INFO, {Size = NewSize, })
+				tween:Play()
+				
+			elseif Button.GuiState == Enum.GuiState.Press then
+				script.Sound:Play()
+				
+
+			elseif Button.GuiState == Enum.GuiState.Idle then
+				tween:Cancel()
+				tween = TweenService:Create(Button, TWEEN_INFO, {Size = currentSize, })
+				tween:Play()
+			end
+		end)
+		
+	end
+	
+end
