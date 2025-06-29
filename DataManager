@@ -1,0 +1,120 @@
+local DataManager = {}
+
+local RepStorage = game:GetService("ReplicatedStorage")
+
+--Store data/profiles
+DataManager.Profiles = {}
+
+function deletefromtable(array, values)
+	for i, v in values do 
+
+		table.remove(array,table.find(array,values[i]))
+
+	end
+
+end
+
+
+function DataManager.AddCash(player: Player, amount: number)
+	
+	local Profile = DataManager.Profiles[player]
+	if not Profile then return end
+	
+	Profile.Data.Cash += amount
+	player.Attributes.Cash.Value = Profile.Data.Cash
+	
+	RepStorage.DataUpdate:FireClient(player, Profile.Data.Cash)
+	
+	
+end
+
+function DataManager.TakeCash(player: Player, amount: number)
+
+	local Profile = DataManager.Profiles[player]
+	if not Profile then return end
+	
+	if Profile.Data.Cash >= amount then
+		
+		Profile.Data.Cash -= amount
+		player.Attributes.Cash.Value = Profile.Data.Cash
+
+		RepStorage.DataUpdate:FireClient(player, Profile.Data.Cash)
+		
+		return false
+	
+	else
+		
+		return true
+	
+	end
+
+end
+
+function DataManager.CheckInventory(player: Player, CarName: string)
+
+	local Profile = DataManager.Profiles[player]
+	if not Profile then return end
+
+	if table.find(Profile.Data.Inventory, CarName) ~= nil then
+		--owned
+		--print(table.concat(Profile.Data.Inventory, " ,"))
+		return true
+	else
+		--not owned
+		return false
+	end
+
+
+
+
+end
+
+function DataManager.AddToInventory(player: Player, CarName: string)
+
+	local Profile = DataManager.Profiles[player]
+	if not Profile then return end
+	
+
+	table.insert(Profile.Data.Inventory, CarName)
+	print("Bought " .. CarName)
+
+end
+
+function DataManager.RemoveFromInventory(player: Player, CarsList)
+
+	local Profile = DataManager.Profiles[player]
+	if not Profile then return end
+	
+	print(table.concat(Profile.Data.Inventory, " ,"))
+
+	for i, CarName in CarsList do
+		
+		if table.find(Profile.Data.Inventory, CarName) ~= nil then
+
+			deletefromtable(Profile.Data.Inventory, CarsList)
+
+		end
+		
+	end
+
+
+
+
+end
+
+function DataManager.Clear(player: Player)
+
+	local Profile = DataManager.Profiles[player]
+	if not Profile then return end
+	Profile.Data.Inventory = {}
+	Profile.Data.Cash = 7500
+	
+	print(table.concat(Profile.Data.Inventory, " ,"))
+	print(Profile.Data.Cash)
+	
+	RepStorage.DataUpdate:FireClient(player, Profile.Data.Cash)
+
+end
+
+
+return DataManager
